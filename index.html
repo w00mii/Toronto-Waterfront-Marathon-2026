@@ -7,7 +7,16 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Marathon">
 <meta name="theme-color" content="#f8f6f4">
-<title>Toronto Marathon Plan</title>
+<!-- iPhone Home Screen app settings -->
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-touch-fullscreen" content="yes">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
+<link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-512.png">
+<title>Marathon</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;1,9..144,300&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#f8f6f4;--surf:#fff;--surf2:#eeecea;--bdr:rgba(0,0,0,.09);--txt:#1a1510;--mut:#8a7f74;--acc:#1a6fd4;--grn:#1e7d3a;--amb:#a06a00;--pnk:#c2366e;--pur:#6b3fbf;--cor:#c93a2a;--fd:'Fraunces',Georgia,serif;--fm:'DM Mono',monospace;--r:12px;--sb:env(safe-area-inset-bottom,0px)}
@@ -271,6 +280,11 @@ body{display:flex;flex-direction:column}
 .op-body img{max-width:220px;max-height:220px;width:auto;height:auto;
   object-fit:contain;border-radius:2px;display:block;cursor:pointer}
 .op-footer{background:#2a2a4a;padding:3px 8px;font-size:9px;color:#8a8aaa;font-family:var(--fm);flex-shrink:0}
+/* iPhone standalone polish */
+html.standalone, html.standalone body { overscroll-behavior-y: none; }
+@supports (-webkit-touch-callout: none) {
+  input, textarea, select { font-size:16px; } /* prevents iOS zooming form fields */
+}
 </style>
 </head>
 <body>
@@ -2494,5 +2508,28 @@ document.addEventListener('keydown', e => {
 
 <!-- ONE PIECE STICKERS -->
 <div id="op-sticker-container"></div>
+<script>
+(function () {
+  var isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+  if (isStandalone) document.documentElement.classList.add('standalone');
+
+  if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('./service-worker.js').catch(function () {});
+    });
+  }
+
+  // In iPhone Home Screen mode, keep same-origin links inside the app shell.
+  document.addEventListener('click', function (event) {
+    var link = event.target.closest && event.target.closest('a[href]');
+    if (!link) return;
+    var url = new URL(link.href, window.location.href);
+    if (url.origin === window.location.origin && !link.target) {
+      event.preventDefault();
+      window.location.href = url.href;
+    }
+  });
+})();
+</script>
 </body>
 </html>
