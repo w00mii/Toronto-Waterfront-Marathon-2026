@@ -1992,7 +1992,7 @@ function toggleMusic() {
 
   if (musicPlaying) {
     audio.pause();
-    audio.src = 'https://drive.google.com/file/d/1lrruqdqGA_JbJJvTOcVoX-w7UMuwIYf9/view?usp=sharing';
+    audio.src = 'https://drive.google.com/uc?export=download&id=1lrruqdqGA_JbJJvTOcVoX-w7UMuwIYf9';
     musicPlaying = false;
     document.getElementById('music-icon').textContent = '🎵';
     document.getElementById('music-lbl').textContent = 'music';
@@ -2040,7 +2040,7 @@ function toggleMusic() {
   };
   audio.onended = stopMusic;
 
-  audio.src = 'https://drive.google.com/file/d/1lrruqdqGA_JbJJvTOcVoX-w7UMuwIYf9/view?usp=sharing';
+  audio.src = 'https://drive.google.com/uc?export=download&id=1lrruqdqGA_JbJJvTOcVoX-w7UMuwIYf9';
   audio.load();
 }
 
