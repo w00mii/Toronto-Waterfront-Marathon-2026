@@ -123,7 +123,7 @@ body{display:flex;flex-direction:column}
 .dc:active{transform:scale(.93)}
 .dc.done{opacity:.5}
 .dc.done::after{content:'✓';position:absolute;top:2px;right:3px;font-size:9px;font-weight:700;color:rgba(30,125,58,.85)}
-.dc.moved{outline:2px dashed var(--amb);outline-offset:-2px}
+.dc.moved{}
 .dn{font-size:7px;color:var(--mut);text-transform:uppercase;letter-spacing:.04em;text-align:center}
 .dl{font-size:8px;font-weight:500;line-height:1.3;text-align:center}
 .ds{font-size:7px;line-height:1.3;text-align:center;opacity:.8}
@@ -1391,42 +1391,54 @@ function recalcPrediction() {
 // updatePredDisplay defined below with full color logic
 
 
-// ── Drag handle to close modal ──────────────────────────────────────────────
-let _dragInited = false;
-function initModalDrag() {
-  if (_dragInited) return;
-  _dragInited = true;
-
-  const overlay = document.getElementById('dmov');
-  const sheet = overlay ? overlay.querySelector('.msh') : null;
+// ── Swipe-down-anywhere to close bottom sheets ───────────────────────────────
+function makeSwipeable(overlayId, sheetSel, onClose) {
+  const overlay = document.getElementById(overlayId);
+  if (!overlay) return;
+  const sheet = overlay.querySelector(sheetSel);
   if (!sheet) return;
-  const handle = sheet.querySelector('.mhdl');
-  if (!handle) return;
 
-  let startY = 0, dy = 0, active = false;
+  let startY = 0, dy = 0, active = false, startedInScrollable = false;
 
-  function start(e) {
+  function isScrollable(el) {
+    while (el && el !== sheet) {
+      const st = window.getComputedStyle(el);
+      const overflow = st.overflowY;
+      if ((overflow === 'auto' || overflow === 'scroll') && el.scrollHeight > el.clientHeight) {
+        return true;
+      }
+      el = el.parentElement;
+    }
+    return false;
+  }
+
+  function onStart(e) {
+    const touch = e.touches ? e.touches[0] : e;
+    startedInScrollable = isScrollable(e.target);
+    if (startedInScrollable) return;
     active = true;
-    startY = e.touches ? e.touches[0].clientY : e.clientY;
+    startY = touch.clientY;
     dy = 0;
     sheet.style.transition = 'none';
   }
-  function move(e) {
+  function onMove(e) {
     if (!active) return;
-    dy = Math.max(0, (e.touches ? e.touches[0].clientY : e.clientY) - startY);
+    const touch = e.touches ? e.touches[0] : e;
+    dy = Math.max(0, touch.clientY - startY);
+    // Only block scroll if actually dragging down
+    if (dy > 8 && e.cancelable) e.preventDefault();
     sheet.style.transform = 'translateY(' + dy + 'px)';
   }
-  function end() {
+  function onEnd() {
     if (!active) return;
     active = false;
     sheet.style.transition = 'transform .26s cubic-bezier(.4,0,.2,1)';
-    if (dy > 100) {
+    if (dy > 80) {
       sheet.style.transform = 'translateY(100%)';
       setTimeout(() => {
         overlay.classList.remove('open');
         sheet.style.transform = '';
-        saveAll();
-        renderPhase(curP);
+        if (onClose) onClose();
       }, 260);
     } else {
       sheet.style.transform = '';
@@ -1434,12 +1446,24 @@ function initModalDrag() {
     dy = 0;
   }
 
-  handle.addEventListener('touchstart', start, {passive: true});
-  handle.addEventListener('touchmove', move, {passive: true});
-  handle.addEventListener('touchend', end);
-  handle.addEventListener('mousedown', start);
-  document.addEventListener('mousemove', move);
-  document.addEventListener('mouseup', end);
+  sheet.addEventListener('touchstart', onStart, {passive: true});
+  sheet.addEventListener('touchmove', onMove, {passive: false});
+  sheet.addEventListener('touchend', onEnd);
+}
+
+let _dragInited = false;
+function initModalDrag() {
+  if (_dragInited) return;
+  _dragInited = true;
+
+  // Day tracker modal
+  makeSwipeable('dmov', '.msh', () => { saveAll(); renderPhase(curP); });
+
+  // Progress analysis modal
+  makeSwipeable('gmov', '.gsh', null);
+
+  // Shayla (Tamagotchi) modal
+  makeSwipeable('tama-mov', '.tama-sh', null);
 }
 function openDM(pi,wi,di) {
   modalCell = {pi,wi,di};
