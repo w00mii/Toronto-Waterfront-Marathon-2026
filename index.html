@@ -607,7 +607,7 @@ function loadAll() {
 }
 
 const STATE = {
-  done: {}, swaps: {}, notes: {}, checks: {},
+  done: {}, swaps: {}, notes: {}, checks: {}, recentSwaps: {},
   seeds: 3, coins: 10,
   slots: Array(6).fill(null).map(()=>({plant:null,planted:null,progress:0,ready:false})),
   harvest: [], poops: [],
@@ -1249,7 +1249,7 @@ function renderPhase(idx) {
       const isDone = STATE.done[k];
       const hasNote = STATE.notes[k] && STATE.notes[k].trim();
       const cssC = CSS_MAP[d.c] || 'r';
-      const isSwapped = STATE.swaps[swK] && JSON.stringify(days[di]) !== JSON.stringify(w.d[di]);
+      const isSwapped = !!(STATE.recentSwaps && STATE.recentSwaps[k]);
       return `<div class="dc ${cssC}${isDone?' done':''}${isSwapped?' moved':''}" onclick="openDM(${idx},${wi},${di})">
         <div class="dn">${DN[di]}</div>
         <div class="dl">${d.l}</div>
@@ -1593,11 +1593,18 @@ function doSwap(tdi) {
   const base = STATE.swaps[swK] ? [...STATE.swaps[swK]] : [...PHASES[pi].weeks[wi].d];
   const tmp = {...base[di]}; base[di]={...base[tdi]}; base[tdi]=tmp;
   STATE.swaps[swK] = base;
+  // Mark both swapped cells for highlight
+  const k1 = ck(pi, wi, di);
+  const k2 = ck(pi, wi, tdi);
+  STATE.recentSwaps[k1] = true;
+  STATE.recentSwaps[k2] = true;
   renderPhase(curP);
   closeDMdirect();
   // Remove the dashed highlight after 5 seconds
   setTimeout(() => {
-    document.querySelectorAll('.dc.moved').forEach(el => el.classList.remove('moved'));
+    delete STATE.recentSwaps[k1];
+    delete STATE.recentSwaps[k2];
+    renderPhase(curP);
   }, 5000);
 }
 
